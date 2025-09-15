@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cake Sales Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Notification Styles -->
+    <style>
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+        }
+        
+        .notification {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
+            padding: 16px;
+            border-left: 4px solid #3b82f6;
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+        
+        .notification.success { border-left-color: #10b981; }
+        .notification.warning { border-left-color: #f59e0b; }
+        .notification.error { border-left-color: #ef4444; }
+        .notification.info { border-left-color: #3b82f6; }
+        
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification-message {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .notification-time {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        
+        .notification-bell:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .currency-selector {
+            margin-left: 16px;
+            padding: 4px 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 12px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+    
+    <!-- Login/Register Screen -->
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-container">
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form active">
+                <div class="auth-header">
+                    <div class="auth-icon">🧁</div>
+                    <h2>Sign In</h2>
+                    <p>Access your cake management system</p>
+                </div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                    </div>
+                    <div id="loginError" class="error-message"></div>
+                    <button type="submit" class="btn btn-primary">Sign In</button>
+                </form>
+                <div class="auth-toggle">
+                    <p>Don't have an account? <a href="#" onclick="toggleAuthMode()">Sign up here</a></p>
+                </div>
+                <div class="demo-accounts">
+                    <p><strong>Demo Accounts:</strong></p>
+                    <p>Admin: admin@cakeshop.com / admin123</p>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="auth-form">
+                <div class="auth-header">
+                    <div class="auth-icon">👤</div>
+                    <h2>Create Account</h2>
+                    <p>Join our cake management system</p>
+                </div>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="registerName" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="registerEmail" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role *</label>
+                        <select id="registerRole" onchange="toggleShopFields()">
+                            <option value="customer">Customer</option>
+                            <option value="shopkeeper">Shop Owner</option>
+                        </select>
+                    </div>
+                    <div id="shopFields" class="shop-fields" style="display: none;">
+                        <div class="form-group">
+                            <label>Shop Name *</label>
+                            <input type="text" id="registerShopName" placeholder="Enter your shop name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input type="text" id="registerAddress" placeholder="Enter your address">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="registerPhone" placeholder="Enter your phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" id="registerPassword" placeholder="Create a password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password *</label>
+                        <input type="password" id="registerConfirmPassword" placeholder="Confirm your password" required>
+                    </div>
+                    <div id="registerError" class="error-message"></div>
+                    <div id="registerSuccess" class="success-message"></div>
+                    <button type="submit" class="btn btn-success">Create Account</button>
+                </form>
+                <div class="auth-toggle">
+                    <p>Already have an account? <a href="#" onclick="toggleAuthMode()">Sign in here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-app" style="display: none;">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <div class="brand-icon">🧁</div>
+                    <span class="brand-text">CakeManager</span>
+                </div>
+                <div class="nav-user">
+                    <div class="notification-bell" onclick="toggleNotifications()" title="Notifications">
+                        🔔
+                        <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+                    </div>
+                    <select id="currencySelector" class="currency-selector" onchange="changeCurrency()">
+                        <option value="USD">USD ($)</option>
+                        <option value="TSH">TSH (TSh)</option>
+                    </select>
+                    <div class="user-info">
+                        <span id="userName" class="user-name"></span>
+                        <span id="userRole" class="user-role"></span>
+                    </div>
+                    <button onclick="logout()" class="btn btn-outline">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <main class="main-content">
+            <!-- Admin Dashboard -->
+            <div id="admin-dashboard" class="dashboard" style="display: none;">
+                <div class="dashboard-header">
+                    <h1>Admin Dashboard</h1>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+                        <button class="tab-btn" onclick="switchTab('users')">Users</button>
+                        <button class="tab-btn" onclick="switchTab('orders')">Orders</button>
+                        <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
+                    </div>
+                </div>
+
+                <!-- Overview Tab -->
+                <div id="overview-tab" class="tab-content active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-blue">👥</div>
+                            <div class="stat-info">
+                                <h3 id="totalShopkeepers">0</h3>
+                                <p>Total Shopkeepers</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-green">👤</div>
+                            <div class="stat-info">
+                                <h3 id="totalCustomers">0</h3>
+                                <p>Total Customers</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-purple">🛒</div>
+                            <div class="stat-info">
+                                <h3 id="totalOrders">0</h3>
+                                <p>Total Orders</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-orange">💰</div>
+                            <div class="stat-info">
+                                <h3 id="totalRevenue">$0.00</h3>
+                                <p>Total Revenue</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-grid">
+                        <div class="card">
+                            <h2>Recent Orders</h2>
+                            <div id="recentOrders" class="recent-orders"></div>
+                        </div>
+                        <div class="card">
+                            <h2>Today's Summary</h2>
+                            <div id="todaySummary" class="summary-stats"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div id="users-tab" class="tab-content">
+                    <div class="tab-header">
+                        <h2>User Management</h2>
+                        <button class="btn btn-primary" onclick="showAddUserModal()">Add User</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="usersTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Contact</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div id="orders-tab" class="tab-content">
+                    <h2>Order Management</h2>
+                    <div class="table-container">
+                        <table id="ordersTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Items</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Reports Tab -->
+                <div id="reports-tab" class="tab-content">
+                    <div class="reports-header">
+                        <h2>Sales Reports & Analytics</h2>
+                        <div class="report-controls">
+                            <select id="reportPeriod" onchange="updateReports()">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                            <div class="chart-type-buttons">
+                                <button class="chart-btn active" onclick="switchChart('bar')">📊</button>
+                                <button class="chart-btn" onclick="switchChart('line')">📈</button>
+                                <button class="chart-btn" onclick="switchChart('pie')">🥧</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reports-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-green">📈</div>
+                            <div class="stat-info">
+                                <h3 id="reportTotalRevenue">$0.00</h3>
+                                <p>Total Revenue</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-blue">📅</div>
+                            <div class="stat-info">
+                                <h3 id="reportTotalOrders">0</h3>
+                                <p>Total Orders</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-purple">🥧</div>
+                            <div class="stat-info">
+                                <h3 id="reportAvgOrder">$0.00</h3>
+                                <p>Avg. Order Value</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reports-content">
+                        <div class="chart-container">
+                            <canvas id="reportsChart"></canvas>
+                        </div>
+                        <div class="order-status-summary">
+                            <h3>Order Status Summary</h3>
+                            <div id="statusSummary" class="status-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shopkeeper Dashboard -->
+            <div id="shopkeeper-dashboard" class="dashboard" style="display: none;">
+                <div class="dashboard-header">
+                    <h1 id="shopkeeperWelcome">Welcome</h1>
+                    <button class="btn btn-primary" onclick="showNewOrderModal()">New Order</button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-blue">🛒</div>
+                        <div class="stat-info">
+                            <h3 id="shopkeeperTotalOrders">0</h3>
+                            <p>Total Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-yellow">⏳</div>
+                        <div class="stat-info">
+                            <h3 id="shopkeeperPendingOrders">0</h3>
+                            <p>Pending Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-green">✅</div>
+                        <div class="stat-info">
+                            <h3 id="shopkeeperCompletedOrders">0</h3>
+                            <p>Completed Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-purple">💰</div>
+                        <div class="stat-info">
+                            <h3 id="shopkeeperRevenue">$0.00</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>My Orders</h2>
+                    <div class="table-container">
+                        <table id="shopkeeperOrdersTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Items</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Order Date</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Dashboard -->
+            <div id="customer-dashboard" class="dashboard" style="display: none;">
+                <div class="dashboard-header">
+                    <h1 id="customerWelcome">Welcome</h1>
+                    <button class="btn btn-primary" onclick="showOrderCakesModal()">New Order</button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-blue">🛒</div>
+                        <div class="stat-info">
+                            <h3 id="customerTotalOrders">0</h3>
+                            <p>My Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-yellow">📦</div>
+                        <div class="stat-info">
+                            <h3 id="customerPendingOrders">0</h3>
+                            <p>Pending Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-green">⭐</div>
+                        <div class="stat-info">
+                            <h3 id="customerCompletedOrders">0</h3>
+                            <p>Completed Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-purple">💰</div>
+                        <div class="stat-info">
+                            <h3 id="customerTotalSpent">$0.00</h3>
+                            <p>Total Spent</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>My Orders</h2>
+                    <div class="table-container">
+                        <table id="customerOrdersTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Items</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Order Date</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- New Order Modal (Shopkeeper) -->
+    <div id="newOrderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Order</h2>
+                <span class="close" onclick="closeModal('newOrderModal')">&times;</span>
+            </div>
+            <form id="newOrderForm">
+                <div class="form-group">
+                    <label>Order Items</label>
+                    <div id="orderItems"></div>
+                    <button type="button" class="btn btn-success" onclick="addOrderItem()">Add Item</button>
+                </div>
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <textarea id="orderNotes" rows="3" placeholder="Any special instructions..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('newOrderModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Cakes Modal (Customer) -->
+    <div id="orderCakesModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Order Cakes</h2>
+                <span class="close" onclick="closeModal('orderCakesModal')">&times;</span>
+            </div>
+            <div class="cakes-grid" id="cakesGrid"></div>
+            <div class="order-total">
+                <h3>Total: <span id="orderTotalCurrency">$</span><span id="orderTotal">0.00</span></h3>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('orderCakesModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitCustomerOrder()">Place Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New User</h2>
+                <span class="close" onclick="closeModal('addUserModal')">&times;</span>
+            </div>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="addUserName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" id="addUserEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Role *</label>
+                    <select id="addUserRole" onchange="toggleAddUserShopFields()">
+                        <option value="customer">Customer</option>
+                        <option value="shopkeeper">Shop Owner</option>
+                    </select>
+                </div>
+                <div id="addUserShopFields" class="shop-fields" style="display: none;">
+                    <div class="form-group">
+                        <label>Shop Name *</label>
+                        <input type="text" id="addUserShopName">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" id="addUserPassword" required>
+                </div>
+                <div id="addUserError" class="error-message"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
